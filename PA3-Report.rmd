@@ -1,0 +1,181 @@
+---
+title: PA3 Report - MMD
+author: Egor Fadeev, 12313685 - Thomas Geier, 12026958
+date: 13.06.2024
+output: pdf_document
+---
+
+# Lloyd's algorithm for k-Means Clustering  
+As a baseline model implement
+Lloyd's algorithm for k-means clustering and initialize it with the first k points as
+initial cluster centers. The default convergence criteria is to stop the algorithm if none
+of the cluster memberships have changed in comparison to the previous iteration.
+
+See [Comparison](#Comparison) for:
+- Track the number of iterations needed for convergence and compare it to the other implementations.
+- Report the achieved NMI averaged over at least 5 runs.
+- Report the runtime in [sec] for your algorithm averaged over at least 5 runs. Also report the number 
+  of distance computations performed.
+
+<!--
+```{r, out.width='33%', fig.align='center', fig.cap="Convergence of k-means.", echo=FALSE}
+knitr::include_graphics("images/***.png")
+```
+ -->
+
+
+### Briefly discuss your implementation of Lloyds algorithm.
+Our `KMeans` class (can be found in `models.py`) implements Lloyd's algorithm for clustering, 
+which is a popular method in unsupervised learning. Here's a detailed look at the key components:
+
+- **Initialization**: The constructor `__init__` initializes the `KMeans` instance with a specified 
+    number of clusters (`k`). This parameter defines how many distinct clusters the algorithm aims to 
+    identify within the dataset.
+
+- **Fitting the Model**
+  - *Initial Centroids:* The `fit` method begins by selecting initial cluster centers (`centers`) 
+    randomly from the dataset `X`.
+  - *Label Assignment:* During each iteration, the algorithm assigns each data point in `X` 
+    to the nearest cluster. This assignment is based on Euclidean distance, calculated in 
+    the `_assign_clusters` method.
+  - *Centroid Recomputation:* After assigning all points to clusters, the cluster centers 
+    are recalculated as the mean of the points within each cluster, handled by the `_compute_centers` method.
+  - *Convergence Check:* The algorithm iterates until the cluster assignments stop changing from one 
+    iteration to the next. It checks for convergence by comparing the current labels with those from the 
+    previous iteration.
+  - *Convergence History:* It records the average distances from points to their cluster centers 
+    over iterations in `convergence_history`, which helps in monitoring the optimization progress.
+
+- **Distance Calculation**: The `_calculate_distances` method computes the pairwise distances between each
+   data point in `X` and each cluster center. This calculation is essential for the cluster assignment 
+   process.
+
+- **Predicting**: The `fit_predict` method fits the model to the data `X` and returns the cluster 
+  assignments for each data point.
+
+- **Efficiency Considerations**: The class tracks the number of iterations (`iterations`) and distance 
+  computations (`distance_computations`), providing insights into the computational cost of the model for 
+  different configurations of `k` and dataset sizes.
+
+Further information for parameters and returns can be found in the documentation of `KMeans` in 
+the file `model.py`.
+
+
+
+
+# k-Means with Locality Sensitive Hashing (LSH)
+Implement Lloyd's algorithm using LSH to speed up the distance calculations. 
+
+See [Comparison](#Comparison) for:
+- Report the accuracy using NMI and the runtime in seconds averaged over at least 5 runs. Also report the 
+    number of distance computations performed. If your implementation doesn't show a speed-up, discuss why 
+    this might be and also discuss whether this situation would change when working larger datasets.
+- Track the number of iterations needed for convergence (if it converges at all) and
+    compare it to the other implementations.
+
+
+### Report how you selected the parameters of LSH and how you combined your functions.
+
+**********************HOW PARAMETERS ARE selected
+
+
+To combine the results of our hash functions effectively, we implemented both 'AND' and 'OR' combination methods:
+- **AND** Combination: This method was implemented to require that all hash bits match for two points to be 
+    considered similar, significantly reducing the likelihood of false positives. It is particularly useful when 
+    stringent similarity criteria are necessary.
+- **OR** Combination: Alternatively, the OR method allows for any matching hash bit to classify two points as 
+    similar, increasing the sensitivity to potential matches and reducing the chance of missing true positives.
+
+
+### Briefly discuss your implementation of k-means with LSH.
+
+Our `KMeansLSH` class, a specialized extension of the `KMeans` implementation, incorporates Locality-Sensitive 
+Hashing (LSH) to enhance clustering performance in high-dimensional data spaces. Here's a detailed look at the 
+key components and functionalities:
+
+- **Initialization**: The constructor `__init__` not only initializes the instance with a specified number of 
+  clusters (`k`) but also sets up the LSH parameters including the number of hashes (`num_hashes`), hash size 
+  (`hash_size`), and the combination method (`AND` or `OR`). This setup allows the class to utilize hash-based 
+  methods to speed up the clustering process.
+
+- **Fitting the Model**
+  - *Initial Setup*: The `fit` method starts by selecting initial cluster centers from the dataset `X` and 
+    setting up the LSH object with our implemented `LSH` class to preprocess the data points.
+  - *Hashing Data Points*: Before the clustering begins, all data points are hashed using the `LSH` method 
+    specified, grouping them into buckets based on their hash values.
+  - *Cluster Assignment*: Instead of computing distances for all data points to all centers, the model first
+    checks if the data points are in the same hash bucket as any center, which reduces the number of 
+    required distance calculations.
+  - *Updating Centers*: The cluster centers are updated by recalculating the mean of the points within each
+    cluster after every iteration.
+  - *Convergence Check*: The algorithm iterates until the cluster assignments stop changing from one 
+    iteration to the next. It checks for convergence by comparing the current labels with those from the 
+    previous iteration.
+  - *Convergence History*: It records the average distances from points to their cluster centers 
+    over iterations in `convergence_history`, which helps in monitoring the optimization progress.
+
+- **Hash-Based Cluster Assignment**: The `_assign_clusters` method leverages hash buckets to pre-group data 
+  points and significantly cut down on the computational overhead by limiting the distance calculations to 
+  only likely candidate points within the same hash bucket.
+
+- **Efficiency Enhancements**: By integrating LSH, `KMeansLSH` reduces the number of distance calculations 
+  needed, especially beneficial in high-dimensional spaces where traditional distance calculations are 
+  computationally expensive.
+
+- **Predicting and Performance Metrics**: Like traditional KMeans, after fitting, the labels can be immediately 
+  accessed or predicted for new data, with additional metrics available such as the number of iterations 
+  (`iterations`) and the total distance computations (`distance_computations`), providing insights into the 
+  model's efficiency.
+
+This implementation can be found in the `models.py` file, offering both the robustness
+of K-means clustering and the efficiency of LSH for handling large, complex datasets.
+
+Further details on parameter configurations and method functionalities are thoroughly documented in the `KMeansLSH` class within the same file.
+
+
+Our `LSH` class which was mentioned before implements Locality-Sensitive Hashing (LSH). Here is a short overview:
+
+- **Initialization:** The constructor `__init__` initializes the `LSH` instance with a specified number of 
+  hash functions (`num_hashes`), the size of each hash output (`hash_size`), and the dimensionality of the 
+  input data (`input_dim`). Each hash function corresponds to a randomly generated hyperplane. These are stored in `planes`, 
+  a list where each element is a hyperplane represented by an array.
+- **Hash Function:** The `hash` method computes hash values for a given matrix `X`, where each row 
+  represents a data point. It utilizes all defined hyperplanes to generate a hash for each data point.
+- **Single Hash Computation:** The `_hash_single` method computes a single hash using a specified hyperplane.
+  It projects the data points onto the hyperplane and assigns a binary value based on the side of the plane 
+  on which each point lies.
+- **Combine Hashes:** The `combine_hashes` method combines multiple hash values into a single hash code per data point. This can be done using either the 'AND' or 'OR' combination methods:
+  - *AND Method:* Uses logical AND across all hash values.
+  - *OR Method:* Uses logical OR across all hash values.
+- **Combined Hash Computation:** The `combined_hash` method computes and combines hash values for input data `X` using a specified method (`AND` or `OR`), making it versatile for different use cases.
+
+Further information for parameters and returns can be found in the documentation of `LSH` in 
+the file `LSH.py`.
+
+# k-means with coresets
+Coresets are a compact representation of data sets,
+such that models trained on a coreset are competitive with models trained on the full
+dataset. In this task you will implement coresets for k-means clustering as in
+Algorithm 1. For the the number of samples *m*, use 100, 1000, and 10000.
+
+
+See [Comparison](#Comparison) for:
+- Report the runtime and NMI you achieve when using coresets of different size (as
+  described above) averaged over at least 5 runs. To do so, cluster the coresets using
+  sklearn’s k-means algorithm (you can supply sample weights to all needed functions).
+- Track the number of iterations needed for convergence and compare it to the other implementations.
+
+### Analyze the variance of the accuracy obtained when using coresets for clustering by computing 10 coresets for each choice of m.
+
+
+# [Go to Section 1](#section-1-title)
+- **Track the number of iterations needed for convergence and compare it to the other implementations.**
+- **Show the performance in terms of NMI and runtime for the different approaches in one plot or table.**
+
+All code leading up to these results can be found in our Jupyter Notebook:
+
+| Method                | Number of iterations               |  NMI                    |  Runtime [s]               |  Number of distance computations  |
+|-----------------------|-----------------------------------|-----------------------------------|-----------------------------|-----------------------------|
+| k-means               | _                            | _                              | _                              | _                              |
+| LSH k-means           | _                          | _                              | _                               | _                              |
+| k-means with coresets | _                         | _                              | _                              | _                              |
