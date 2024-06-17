@@ -185,9 +185,17 @@ See [Comparison](#Comparison) for:
  - Track the number of iterations needed for convergence and compare it to the other implementations.
 
 ### Analyze the variance of the accuracy obtained when using coresets for clustering by computing 10 coresets for each choice of m.
+calculated variances:
 
+ - $m = 200: Variance of NMI = 4.3298 * 10^{-6}$
+ - $m = 1000: Variance of NMI = 2.6485 *10^{-6}$
+ - $m = 10000: Variance of NMI = 8.6194 * 10^{-7}$
 
-
+Looking at the variances one can observe that the results indicate that as the coreset size 
+increases, the variance in NMI decreases. Larger coresets provide a more stable approximation of the 
+original dataset, leading to more consistent clustering results.
+The anylisis concludes that there is a trade-off between the computational 
+efficiency and the stability of clustering results when using coresets. 
 
 # Comparison {#Comparison}
 - **Track the number of iterations needed for convergence and compare it to the other implementations.**
